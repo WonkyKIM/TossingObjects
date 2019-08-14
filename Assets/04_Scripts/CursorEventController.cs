@@ -3,82 +3,92 @@
 
 public class CursorEventController : MonoBehaviour {
 
-
+    
+    private TossingObject currTossingObject;
+    private bool isHovered = false;
+    private bool isClicked = false;
+    
     [SerializeField] private CursorObject cursorObject;
     private Vector3 position;
 
     #region Private Variables
     public enum CursorStatus {
-        normal,
-        hover,
-        clicked
+        Normal,
+        Hover,
+        Clicked
     }
     private CursorStatus currCursorStatus;
+    private CursorStatus currCursorStatus_cached;
 
     private Camera cam;
-
-
-    private bool isHovered = false;
     #endregion
-
-
+    
     #region MonoBehaviour
     private void Awake() {
         if(cursorObject == null) {
+            cursorObject = FindObjectOfType<CursorObject>();
         }
         cam = Camera.main;
     }
-
-
     private void Update() {
-
-
+        MouseBehaviour();
     }
     #endregion
-
-
+    
 
     #region Private Methods
     private void MouseBehaviour() {
+        
+        // Update Cursor Position
         Vector2 mousePos = Input.mousePosition;
         position = cam.ScreenToWorldPoint( new Vector3( mousePos.x, mousePos.y, cam.nearClipPlane ) );
         cursorObject.Position = position;
 
-        if (Input.GetMouseButtonDown( 0 )) {
-            //ChangeStatus( CursorStatus.clicked );
-        }
-        if (Input.GetMouseButtonUp( 0 )) {
-            if (isHovered) {
-                //ChangeStatus( CursorStatus.hover );
-            } else {
-                //ChangeStatus( CursorStatus.normal );
+        // Check Mouse Hover
+        Ray ray = cam.ScreenPointToRay(mousePos);
+        RaycastHit hit;
+        if(Physics.Raycast(ray, out hit)) {
+            if(currTossingObject == null) {
+                currTossingObject = hit.transform.GetComponent<TossingObject>();
             }
-        }
-    }
-
-
-
-    private void ChangeStatus( CursorStatus _status ) {
-        if (currCursorStatus == _status) {
-            return;
         } else {
-            currCursorStatus = _status;
-            switch (currCursorStatus) {
-                case CursorStatus.normal:
-                    //cursorSize_target = 0.3f;
-                    //mr.material.SetColor( shaderProp_color, Color.gray );
+            currTossingObject = null;
+        }
+        isHovered = (currTossingObject != null);
+
+        // Mouse Click Event
+        if(isHovered && Input.GetMouseButtonDown(0)) {
+            // Click Event
+            isClicked = true;
+        }
+        if(isClicked && Input.GetMouseButtonUp(0)) {
+            // Throw Event
+            isClicked = false;
+        }
+        
+        // Update Status
+        if(isClicked) {
+            currCursorStatus = CursorStatus.Clicked;
+        } else {
+            currCursorStatus = (isHovered) ? CursorStatus.Hover : CursorStatus.Normal;
+        }
+        
+        // Update Cursor
+        if(currCursorStatus != currCursorStatus_cached) {
+            currCursorStatus_cached = currCursorStatus;
+            switch(currCursorStatus) {
+                case CursorStatus.Normal:
+                    cursorObject.UpdateCursor(0.3f, Color.gray);
                     break;
-                case CursorStatus.hover:
-                    //cursorSize_target = 0.3f;
-                    //mr.material.SetColor( shaderProp_color, Color.white );
+                case CursorStatus.Hover:
+                    cursorObject.UpdateCursor(0.3f, Color.green);
                     break;
-                case CursorStatus.clicked:
-                    //cursorSize_target = 0.8f;
-                    //mr.material.SetColor( shaderProp_color, Color.white );
+                case CursorStatus.Clicked:
+                    cursorObject.UpdateCursor(0.8f, Color.white);
                     break;
             }
-            //UpdateCursorStart();
         }
+
     }
     #endregion
 }

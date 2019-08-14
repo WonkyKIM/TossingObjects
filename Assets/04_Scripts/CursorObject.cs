@@ -16,6 +16,19 @@ public class CursorObject : MonoBehaviour {
     private float cursorSizeVelocity;
     private bool isCursorSizeChanging = false;
 
+    
+    #region Public Methods
+    public void UpdateCursor(float? _target = null, Color? _color = null) {
+        if(_target != null) {
+            cursorSize_target = (float)_target;
+        }
+        if(_color != null) {
+            mr.material.SetColor(shaderProp_color, (Color)_color);
+        }
+        isCursorSizeChanging = true;
+        timer_update = 0;
+    }
+    #endregion
 
 
     #region MonoBehaviour
@@ -23,41 +36,19 @@ public class CursorObject : MonoBehaviour {
         mr = this.GetComponent<MeshRenderer>();
         shaderProp_size = Shader.PropertyToID( "_CursorSize" );
         shaderProp_color = Shader.PropertyToID( "_MainColor" );
+        UpdateCursor(0.3f, Color.gray);
     }
-
-    private void Start() {
-        UpdateCursorStart( 0.3f, Color.gray );
-    }
-
     private void Update() {
-
         if (isCursorSizeChanging) {
-            UpdateCursor();
+            CursorInterpolation();
         }
-
     }
     #endregion
 
-
-
+    
     #region Private Methods
-
-
-
-
-    private void UpdateCursorStart( float? _target = null, Color? _color = null ) {
-        if (_target != null) {
-            cursorSize_target = (float)_target;
-        }
-        if (_color != null) {
-            mr.material.SetColor( shaderProp_color, (Color)_color );
-        }
-        isCursorSizeChanging = true;
-        timer_update = 0;
-    }
-
     float timer_update = 0;
-    private void UpdateCursor() {
+    private void CursorInterpolation() {
         cursorSizeVelocity += ( cursorSize_target - cursorSize ) * Time.deltaTime * 5;
         cursorSize += cursorSizeVelocity;
         //if( Mathf.Abs(cursorSize_target - cursorSize) < 0.0001f ) {
