@@ -1,6 +1,4 @@
-﻿using System.Collections;
-using System.Collections.Generic;
-using UnityEngine;
+﻿using UnityEngine;
 
 public class TossingObject : MonoBehaviour {
 
@@ -36,8 +34,8 @@ public class TossingObject : MonoBehaviour {
         physics.MoveToTarget(_target);
     }
 
-    public void Throw(Vector3 _force, Vector3 _force2) {
-        physics.AddForce(_force, _force2);
+    public void Throw(Vector3 _forceThrow, float _angularVelocity) {
+        physics.AddForce(_forceThrow, _angularVelocity);
         visibiliy.Invisible();
     }
 

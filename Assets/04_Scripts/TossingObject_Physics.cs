@@ -1,6 +1,4 @@
-﻿using System.Collections;
-using System.Collections.Generic;
-using UnityEngine;
+﻿using UnityEngine;
 
 /// <summary>
 /// 
@@ -11,6 +9,7 @@ public class TossingObject_Physics : MonoBehaviour {
     [SerializeField] private Transform tr_this;
     
     private Vector3 velocity;
+    private float angularVelocity;
 
     private Vector3 rotation_direction;
     private float rotation_strength;
@@ -18,8 +17,9 @@ public class TossingObject_Physics : MonoBehaviour {
     private Vector3 target;
     private bool isToTarget = false;
 
-    [SerializeField, Range(0.1f, 1)] private float drag = 0.96f;
-    [SerializeField, Range(0.1f, 1)] private float drag_rotation = 0.96f;
+    [SerializeField, Range(0.1f, 1)] private float drag = 0.94f;
+    [SerializeField, Range(0.1f, 1)] private float drag_angular = 0.96f;
+    [SerializeField, Range(0.1f, 1)] private float drag_rotation = 0.98f;
 
     [SerializeField] private float rotationSensitivity = 2;
 
@@ -30,14 +30,17 @@ public class TossingObject_Physics : MonoBehaviour {
             mass = m;
         }
     }
-    private float mass = 1;
+    [SerializeField] private float mass = 1;
 
 
-    public void AddForce(Vector3 _force, Vector3 _force2) {
+    public void AddForce(Vector3 _forceThrow, float _angularVel) {
         isToTarget = false;
-        Vector3 f = Vector3.Min(_force, Vector3.one*10) / mass;
-        velocity += f;
-        ForceToRotation(f);
+        Vector3 f1 = Vector3.Min(_forceThrow, Vector3.one*2) / mass;
+        velocity += f1;
+        //Vector3 f2 = (_forceSpin - _forceThrow) / mass;
+        //Vector3 f2 = (tr_this.InverseTransformVector(_forceSpin) - tr_this.TransformVector(_forceThrow)) / mass;
+        angularVelocity = _angularVel;
+        ForceToRotation(f1);
     }
 
     public void MoveToTarget(Vector3 _target) {
@@ -60,7 +63,7 @@ public class TossingObject_Physics : MonoBehaviour {
         
 #if UNITY_EDITOR
         if(Input.GetKeyDown(KeyCode.A)) {
-            AddForce(Camera.main.transform.forward * 1, Vector3.zero);
+            AddForce(Camera.main.transform.forward * 1, 0);
         }
         if(Input.GetKeyDown(KeyCode.S)) {
             float[] a = new float[3];
@@ -70,6 +73,8 @@ public class TossingObject_Physics : MonoBehaviour {
             MoveToTarget(new Vector3(a[0], a[1], a[2]));
         }
 #endif
+        //velocity += tr_this.TransformVector(additionalVelocity) * Time.deltaTime;
+        velocity = Quaternion.AngleAxis(angularVelocity, Camera.main.transform.forward) * velocity;
 
         if(isToTarget) {
             Vector3 vel = (target - tr_this.position) / mass * 0.2f;
@@ -80,7 +85,9 @@ public class TossingObject_Physics : MonoBehaviour {
                 //rotation_strength = 0;
             }
         }
-
+    }
+    
+    private void LateUpdate() {
         //float localRotX = Vector3.Dot(tr_this.forward, velocity);
         //float localRotY = Vector3.Dot(tr_this.up, velocity);
         //float localRotZ = Vector3.Dot(-tr_this.right, velocity);
@@ -90,8 +97,22 @@ public class TossingObject_Physics : MonoBehaviour {
         tr_this.Rotate(tr_this.InverseTransformDirection(rotation_direction) * rotation_strength * rotationSensitivity);
 
         velocity *= drag;
+        angularVelocity *= drag_angular;
         rotation_strength *= drag_rotation;
     }
+
+
+    // Collision Event From Manager
+    public void OnCollisionWithOther(TossingObject_Physics _coll, float _dist) {
+        Vector3 normal = this.transform.position - _coll.transform.position;
+        normal.Normalize();
+        
+        _coll.AddForce(normal * Vector3.Dot(velocity, normal), 0);
+        
+        this.transform.position = _coll.transform.position + normal * _dist;
+        velocity += Vector3.Reflect(velocity, normal) / mass;
+    }
+
 
 
 

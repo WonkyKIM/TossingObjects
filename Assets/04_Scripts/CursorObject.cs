@@ -15,7 +15,8 @@ public class CursorObject : MonoBehaviour {
     private float cursorSize = 0.3f;
     private float cursorSizeVelocity;
     private bool isCursorSizeChanging = false;
-
+    
+    private Transform cam;
     
     #region Public Methods
     public void UpdateCursor(float? _target = null, Color? _color = null) {
@@ -33,12 +34,15 @@ public class CursorObject : MonoBehaviour {
 
     #region MonoBehaviour
     private void Awake() {
-        mr = this.GetComponent<MeshRenderer>();
+        cam = Camera.main.transform;
+        mr = this.GetComponentInChildren<MeshRenderer>();
         shaderProp_size = Shader.PropertyToID( "_CursorSize" );
         shaderProp_color = Shader.PropertyToID( "_MainColor" );
         UpdateCursor(0.3f, Color.gray);
     }
     private void Update() {
+        this.transform.LookAt(cam);
+        //lookAtObject.transform.rotation = Quaternion.LookRotation(cam.position - lookAtObject.position);
         if (isCursorSizeChanging) {
             CursorInterpolation();
         }
